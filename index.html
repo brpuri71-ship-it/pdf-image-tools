@@ -2,16 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF & Image Tools - Free All-in-One Converter</title>
-    <meta name="description" content="Free online PDF and image tools. Convert, compress, merge, and split files directly in your browser. No uploads, no limits, 100% private." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>PDF & Image Tools</title>
+    <meta name="description" content="Free PDF and image tools. Convert, compress, merge, and split files directly on your device. No internet required." />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="image/png" href="./icon.png" />
     <style>
-      html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; }
+      html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; overflow-x: hidden; }
       #root { min-height: 100vh; }
+      * { -webkit-tap-highlight-color: transparent; }
+      body { 
+        -webkit-user-select: none; 
+        user-select: none;
+        overscroll-behavior: none;
+      }
     </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
