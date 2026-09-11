@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Download, Maximize, Loader2, X } from 'lucide-react';
-import { saveFileFromDataUrl } from '../utils/fileSaver';
+import { Upload, Download, Maximize, Loader2, X, Share2 } from 'lucide-react';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
 export default function ImageResizer() {
   const [image, setImage] = useState<string | null>(null);
@@ -11,6 +11,7 @@ export default function ImageResizer() {
   const [aspectRatio, setAspectRatio] = useState(1);
   const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [resizedImage, setResizedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,15 +68,30 @@ export default function ImageResizer() {
       const ctx = canvas.getContext('2d')!;
       ctx.drawImage(img, 0, 0, newSize.width, newSize.height);
 
-      const resizedDataUrl = canvas.toDataURL('image/png');
-      const name = fileName.replace(/\.[^.]+$/, '');
-      await saveFileFromDataUrl(resizedDataUrl, `${name}-resized.png`);
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setResizedImage(resizedDataUrl);
     } catch (err) {
       console.error('Error resizing:', err);
       alert('Error resizing image');
     }
 
     setProcessing(false);
+  };
+
+  const handleSave = async () => {
+    if (!resizedImage) return;
+    const response = await fetch(resizedImage);
+    const blob = await response.blob();
+    const name = fileName.replace(/\.[^.]+$/, '');
+    await saveToPhone(blob, `${name}-resized.jpg`);
+  };
+
+  const handleShare = async () => {
+    if (!resizedImage) return;
+    const response = await fetch(resizedImage);
+    const blob = await response.blob();
+    const name = fileName.replace(/\.[^.]+$/, '');
+    await shareFile(blob, `${name}-resized.jpg`);
   };
 
   const reset = () => {
@@ -162,28 +178,65 @@ export default function ImageResizer() {
               </label>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={reset}
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
-              >
-                Choose Another
-              </button>
-              <button
-                onClick={resizeImage}
-                disabled={processing}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Maximize className="w-4 h-4" />
-                    Resize & Save
-                  </>
-                )}
-              </button>
-            </div>
+            {!resizedImage ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={reset}
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Choose Another
+                </button>
+                <button
+                  onClick={resizeImage}
+                  disabled={processing}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Maximize className="w-4 h-4" />
+                      Resize Image
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative">
+                  <img
+                    src={resizedImage}
+                    alt="Resized"
+                    className="max-h-48 mx-auto rounded-lg border border-slate-200"
+                  />
+                </div>
+                <div className="text-center text-sm text-slate-600">
+                  New size: {newSize.width} × {newSize.height}px
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={reset}
+                    className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                  >
+                    Start Over
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Save
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

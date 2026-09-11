@@ -4,7 +4,7 @@ import {
   Camera, Upload, FileType, FileText, Languages,
   PenTool, Eraser, CreditCard, Flashlight, Wand2, MonitorPlay,
   MoreVertical, X, Check, Trash2, ArrowRight, Download, Plus,
-  MoveUp, MoveDown, Layers, Loader2
+  MoveUp, MoveDown, Layers, Loader2, Share2
 } from 'lucide-react';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';

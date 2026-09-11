@@ -4,8 +4,9 @@ import { Upload, FileText, Download, Loader2, ImageIcon, Share2 } from 'lucide-r
 import * as pdfjsLib from 'pdfjs-dist';
 import { saveToPhone, shareFile } from '../utils/fileSaver';
 
-// Set up PDF.js worker to use the local file
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('/pdf.worker.min.mjs', window.location.origin).toString();
+// Set up PDF.js worker - use public path that works in production Capacitor builds
+const workerPath = '/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
 
 export default function PdfToImage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
