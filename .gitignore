@@ -2,18 +2,23 @@
 # Build artifacts
 dist/
 build/
-assets/
+*.js
+*.mjs
+*.css
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+.android/
+*.apk
+*.aar
+*.so
 
 # Dependencies
 node_modules/
-
-# Android build files
-.gradle/
-*.jar
-
-# Temporary files
-*.tmp
-*.swp
+vendor/
 
 # Logs
 *.log
@@ -21,13 +26,59 @@ node_modules/
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
 
-# Editors
+# Editor
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Temporary files
+*.tmp
+*~
+*.bak
+*.orig
+*.rej
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

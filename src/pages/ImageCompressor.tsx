@@ -85,7 +85,10 @@ export default function ImageCompressor() {
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const i = new window.Image();
         i.onload = () => resolve(i);
-        i.onerror = reject;
+        i.onerror = (e) => {
+          console.error('Image load error:', e);
+          reject(new Error('Failed to load image'));
+        };
         i.src = image;
       });
 
@@ -94,7 +97,11 @@ export default function ImageCompressor() {
       const finalHeight = resize ? height : img.height;
       canvas.width = finalWidth;
       canvas.height = finalHeight;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
 
       // Background for transparent images when converting to JPEG
       if (format === 'image/jpeg') {
@@ -148,7 +155,9 @@ export default function ImageCompressor() {
       }
     } catch (err) {
       console.error('Error compressing:', err);
-      alert('Error compressing image');
+      alert('Error compressing image: ' + (err as Error).message);
+      setProcessing(false);
+      return;
     }
 
     setProcessing(false);
