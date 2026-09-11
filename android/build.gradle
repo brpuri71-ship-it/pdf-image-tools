@@ -14,9 +14,8 @@ buildscript {
     }
 }
 
-apply from: "variables.gradle"
-
 allprojects {
+    apply from: "${rootProject.projectDir}/variables.gradle"
     repositories {
         google()
         mavenCentral()

@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Download, Loader2, X, FileText } from 'lucide-react';
+import { Upload, Download, Loader2, X, FileText, Share2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
 interface PdfItem {
   id: string;
@@ -13,6 +14,7 @@ interface PdfItem {
 export default function PdfMerge() {
   const [pdfs, setPdfs] = useState<PdfItem[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,13 +82,7 @@ export default function PdfMerge() {
 
       const mergedBytes = await mergedPdf.save();
       const blob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'merged.pdf';
-      link.click();
-      URL.revokeObjectURL(url);
+      setResultBlob(blob);
     } catch (err) {
       console.error('Error merging PDFs:', err);
       alert('Error merging PDFs. Some files may be encrypted or corrupted.');
@@ -194,11 +190,11 @@ export default function PdfMerge() {
               ))}
             </div>
 
-            {pdfs.length >= 2 && (
+            {pdfs.length >= 2 && !resultBlob && (
               <button
                 onClick={mergePdfs}
                 disabled={processing}
-                className="w-full px-4 py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-rose-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {processing ? (
                   <>
@@ -212,6 +208,33 @@ export default function PdfMerge() {
                   </>
                 )}
               </button>
+            )}
+
+            {resultBlob && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => saveToPhone(resultBlob, 'merged.pdf')}
+                    className="flex-1 px-4 py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Download className="w-5 h-5" />
+                    Save
+                  </button>
+                  <button
+                    onClick={() => shareFile(resultBlob, 'merged.pdf')}
+                    className="flex-1 px-4 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setResultBlob(null); reset(); }}
+                  className="w-full py-2 text-slate-500 text-sm font-medium"
+                >
+                  Start Over
+                </button>
+              </div>
             )}
 
             {pdfs.length < 2 && (

@@ -1,13 +1,15 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Download, Loader2, FileText, Scissors } from 'lucide-react';
+import { Upload, Download, Loader2, FileText, Scissors, Share2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
 export default function PdfSplit() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [splitMode, setSplitMode] = useState<'all' | 'range'>('all');
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [rangeStart, setRangeStart] = useState(1);
   const [rangeEnd, setRangeEnd] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,17 +54,12 @@ export default function PdfSplit() {
           newPdf.addPage(page);
           const bytes = await newPdf.save();
           const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `page-${i + 1}.pdf`;
-          link.click();
-          URL.revokeObjectURL(url);
+          await saveToPhone(blob, `page-${i + 1}.pdf`);
           
           // Small delay between downloads
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
+        alert('All pages saved to Documents');
       } else {
         // Split by range
         const start = Math.max(0, rangeStart - 1);
@@ -78,14 +75,7 @@ export default function PdfSplit() {
         
         const bytes = await newPdf.save();
         const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        const name = pdfFile.name.replace('.pdf', '');
-        link.download = `${name}-pages-${rangeStart}-to-${rangeEnd}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
+        setResultBlob(blob);
       }
     } catch (err) {
       console.error('Error splitting PDF:', err);
@@ -202,31 +192,58 @@ export default function PdfSplit() {
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={reset}
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
-              >
-                Choose Another
-              </button>
-              <button
-                onClick={splitPdf}
-                disabled={processing}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-amber-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Splitting...
-                  </>
-                ) : (
-                  <>
-                    <Scissors className="w-4 h-4" />
-                    Split PDF
-                  </>
-                )}
-              </button>
-            </div>
+            {!resultBlob ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={reset}
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Choose Another
+                </button>
+                <button
+                  onClick={splitPdf}
+                  disabled={processing}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-amber-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Splitting...
+                    </>
+                  ) : (
+                    <>
+                      <Scissors className="w-4 h-4" />
+                      Split PDF
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => saveToPhone(resultBlob, `${pdfFile?.name.replace('.pdf', '')}-pages-${rangeStart}-to-${rangeEnd}.pdf`)}
+                    className="flex-1 px-4 py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Download className="w-5 h-5" />
+                    Save
+                  </button>
+                  <button
+                    onClick={() => shareFile(resultBlob, `${pdfFile?.name.replace('.pdf', '')}-pages-${rangeStart}-to-${rangeEnd}.pdf`)}
+                    className="flex-1 px-4 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setResultBlob(null); reset(); }}
+                  className="w-full py-2 text-slate-500 text-sm font-medium"
+                >
+                  Start Over
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

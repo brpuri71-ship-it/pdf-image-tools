@@ -8,11 +8,22 @@ import {
   GalleryHorizontal,
   Combine,
   Scissors,
+  Maximize,
+  RefreshCw,
+  ScanLine,
   Shield,
   Zap,
 } from 'lucide-react';
 
 const tools = [
+  {
+    name: 'Document Scanner',
+    description: 'Scan docs, OCR, Sign & ID Cards',
+    icon: ScanLine,
+    path: '/scanner',
+    color: 'from-emerald-500 to-teal-600',
+    shadow: 'shadow-emerald-200',
+  },
   {
     name: 'Image → PDF',
     description: 'Convert a single image to PDF',
@@ -69,6 +80,22 @@ const tools = [
     color: 'from-amber-500 to-amber-600',
     shadow: 'shadow-amber-200',
   },
+  {
+    name: 'Image Resizer',
+    description: 'Change image dimensions',
+    icon: Maximize,
+    path: '/image-resizer',
+    color: 'from-indigo-500 to-indigo-600',
+    shadow: 'shadow-indigo-200',
+  },
+  {
+    name: 'Image Converter',
+    description: 'Convert between PNG, JPG, WebP',
+    icon: RefreshCw,
+    path: '/image-converter',
+    color: 'from-pink-500 to-pink-600',
+    shadow: 'shadow-pink-200',
+  },
 ];
 
 const container = {
@@ -88,7 +115,7 @@ const item = {
 
 export default function Home() {
   return (
-    <div>
+    <div className="pb-20">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

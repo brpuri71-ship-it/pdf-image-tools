@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Download, Loader2, ImageIcon } from 'lucide-react';
+import { Upload, FileText, Download, Loader2, ImageIcon, Share2 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set up PDF.js worker to use the local file
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('/pdf.worker.min.mjs', window.location.origin).toString();
 
 export default function PdfToImage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -70,11 +71,16 @@ export default function PdfToImage() {
     setProcessing(false);
   };
 
-  const downloadImage = (dataUrl: string, index: number) => {
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = `page-${index + 1}.png`;
-    link.click();
+  const downloadImage = async (dataUrl: string, index: number) => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    await saveToPhone(blob, `page-${index + 1}.png`);
+  };
+
+  const handleShare = async (dataUrl: string, index: number) => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    await shareFile(blob, `page-${index + 1}.png`);
   };
 
   const reset = () => {
@@ -152,13 +158,20 @@ export default function PdfToImage() {
                       alt={`Page ${i + 1}`}
                       className="w-full rounded-lg border border-slate-200"
                     />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col items-center justify-center gap-2">
                       <button
                         onClick={() => downloadImage(img, i)}
-                        className="px-3 py-2 bg-white rounded-lg text-sm font-medium text-slate-700 flex items-center gap-1"
+                        className="w-24 px-2 py-1.5 bg-white rounded-lg text-xs font-bold text-slate-700 flex items-center justify-center gap-1"
                       >
-                        <Download className="w-4 h-4" />
-                        Download
+                        <Download className="w-3 h-3" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => handleShare(img, i)}
+                        className="w-24 px-2 py-1.5 bg-blue-600 rounded-lg text-xs font-bold text-white flex items-center justify-center gap-1"
+                      >
+                        <Share2 className="w-3 h-3" />
+                        Share
                       </button>
                     </div>
                     <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded">

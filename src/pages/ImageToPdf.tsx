@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileImage, Download, X, Loader2 } from 'lucide-react';
+import { Upload, FileImage, Download, X, Loader2, Share2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
 export default function ImageToPdf() {
   const [image, setImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,10 +42,11 @@ export default function ImageToPdf() {
     setProcessing(true);
 
     try {
-      const img = new window.Image();
-      img.src = image;
-      await new Promise((resolve) => {
-        img.onload = resolve;
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(new Error('Failed to load image'));
+        img.src = image;
       });
 
       const imgWidth = img.width;
@@ -71,8 +74,10 @@ export default function ImageToPdf() {
       const x = (pageWidth - width) / 2;
       const y = (pageHeight - height) / 2;
       
-      pdf.addImage(image, 'JPEG', x, y, width, height);
-      pdf.save('converted.pdf');
+      const format = image.includes('png') ? 'PNG' : 'JPEG';
+      pdf.addImage(image, format, x, y, width, height);
+      const pdfOutput = pdf.output('blob');
+      setResultBlob(pdfOutput);
     } catch (err) {
       console.error('Error converting:', err);
       alert('Error converting image to PDF');
@@ -142,30 +147,59 @@ export default function ImageToPdf() {
               <span className="truncate">{fileName}</span>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={reset}
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
-              >
-                Choose Another
-              </button>
-              <button
-                onClick={convertToPdf}
-                disabled={processing}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-blue-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Converting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Convert to PDF
-                  </>
-                )}
-              </button>
+            <div className="flex flex-col gap-3">
+              {!resultBlob ? (
+                <div className="flex gap-3">
+                  <button
+                    onClick={reset}
+                    className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                  >
+                    Choose Another
+                  </button>
+                  <button
+                    onClick={convertToPdf}
+                    disabled={processing}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-blue-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Converting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Convert to PDF
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => saveToPhone(resultBlob, 'converted.pdf')}
+                      className="flex-1 px-4 py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Download className="w-5 h-5" />
+                      Save
+                    </button>
+                    <button
+                      onClick={() => shareFile(resultBlob, 'converted.pdf')}
+                      className="flex-1 px-4 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Share2 className="w-5 h-5" />
+                      Share
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => { setResultBlob(null); reset(); }}
+                    className="w-full py-2 text-slate-500 text-sm font-medium"
+                  >
+                    Start Over
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

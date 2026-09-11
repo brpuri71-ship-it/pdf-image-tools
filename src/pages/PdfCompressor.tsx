@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Download, FileDown, Loader2, FileText } from 'lucide-react';
+import { Upload, Download, FileDown, Loader2, FileText, Share2 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { saveToPhone, shareFile } from '../utils/fileSaver';
 
 export default function PdfCompressor() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -58,15 +59,16 @@ export default function PdfCompressor() {
     setProcessing(false);
   };
 
-  const downloadCompressed = () => {
+  const handleSave = async () => {
     if (!compressedBlob) return;
-    const url = URL.createObjectURL(compressedBlob);
-    const link = document.createElement('a');
-    link.href = url;
     const name = pdfFile?.name.replace('.pdf', '') || 'compressed';
-    link.download = `${name}-compressed.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
+    await saveToPhone(compressedBlob, `${name}-compressed.pdf`);
+  };
+
+  const handleShare = async () => {
+    if (!compressedBlob) return;
+    const name = pdfFile?.name.replace('.pdf', '') || 'compressed';
+    await shareFile(compressedBlob, `${name}-compressed.pdf`);
   };
 
   const formatSize = (bytes: number) => {
@@ -131,22 +133,31 @@ export default function PdfCompressor() {
 
             {compressedBlob && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-center sm:text-left">
                     <p className="text-sm font-medium text-orange-800">
                       Compressed: {formatSize(compressedSize)}
                     </p>
                     <p className="text-xs text-orange-600">
-                      {reduction > 0 ? `${reduction}% smaller` : reduction === 0 ? 'Already optimized' : 'Size increased (try different settings)'}
+                      {reduction > 0 ? `${reduction}% smaller` : reduction === 0 ? 'Already optimized' : 'Size increased'}
                     </p>
                   </div>
-                  <button
-                    onClick={downloadCompressed}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center gap-1"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-bold hover:bg-orange-700 transition-colors flex items-center gap-1"
+                    >
+                      <Download className="w-4 h-4" />
+                      Save
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-1"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
