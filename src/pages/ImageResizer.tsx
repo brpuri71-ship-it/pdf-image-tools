@@ -11,7 +11,7 @@ export default function ImageResizer() {
   const [aspectRatio, setAspectRatio] = useState(1);
   const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [resizedBlob, setResizedBlob] = useState<Blob | null>(null);
+  const [resizedImage, setResizedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,17 +77,8 @@ export default function ImageResizer() {
 
       ctx.drawImage(img, 0, 0, newSize.width, newSize.height);
 
-      const resizedDataUrl = canvas.toDataURL('image/png');
-      
-      // Convert to blob
-      const response = await fetch(resizedDataUrl);
-      const blob = await response.blob();
-
-      if (blob.size === 0) {
-        throw new Error('Resized image is empty');
-      }
-
-      setResizedBlob(blob);
+      const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setResizedImage(resizedDataUrl);
     } catch (err) {
       console.error('Error resizing:', err);
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -98,25 +89,19 @@ export default function ImageResizer() {
   };
 
   const handleSave = async () => {
-    if (!resizedBlob) return;
-    try {
-      const name = fileName.replace(/\.[^.]+$/, '');
-      await saveToPhone(resizedBlob, `${name}-resized.png`);
-    } catch (err) {
-      console.error('Save error:', err);
-      alert('Failed to save image');
-    }
+    if (!resizedImage) return;
+    const response = await fetch(resizedImage);
+    const blob = await response.blob();
+    const name = fileName.replace(/\.[^.]+$/, '');
+    await saveToPhone(blob, `${name}-resized.jpg`);
   };
 
   const handleShare = async () => {
-    if (!resizedBlob) return;
-    try {
-      const name = fileName.replace(/\.[^.]+$/, '');
-      await shareFile(resizedBlob, `${name}-resized.png`);
-    } catch (err) {
-      console.error('Share error:', err);
-      alert('Failed to share image');
-    }
+    if (!resizedImage) return;
+    const response = await fetch(resizedImage);
+    const blob = await response.blob();
+    const name = fileName.replace(/\.[^.]+$/, '');
+    await shareFile(blob, `${name}-resized.jpg`);
   };
 
   const reset = () => {
@@ -231,48 +216,58 @@ export default function ImageResizer() {
               </label>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={reset}
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
-              >
-                Choose Another
-              </button>
-              <button
-                onClick={resizeImage}
-                disabled={processing}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {processing ? (
-                  <>
+            {!resizedImage ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={reset}
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Choose Another
+                </button>
+                <button
+                  onClick={resizeImage}
+                  disabled={processing}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {processing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Resizing...
-                  </>
-                ) : (
-                  <>
-                    <Maximize className="w-4 h-4" />
-                    Resize Image
-                  </>
-                )}
-              </button>
-            </div>
-
-            {resizedBlob && (
-              <div className="space-y-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                <div className="text-sm text-indigo-700">
-                  ✅ Image resized successfully!
+                  ) : (
+                    <>
+                      <Maximize className="w-4 h-4" />
+                      Resize Image
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative">
+                  <img
+                    src={resizedImage}
+                    alt="Resized"
+                    className="max-h-48 mx-auto rounded-lg border border-slate-200"
+                  />
                 </div>
-                <div className="flex gap-2">
+                <div className="text-center text-sm text-slate-600">
+                  New size: {newSize.width} × {newSize.height}px
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={reset}
+                    className="flex-1 px-4 py-3 border border-slate-300 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                  >
+                    Start Over
+                  </button>
                   <button
                     onClick={handleSave}
-                    className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-100 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     Save
                   </button>
                   <button
                     onClick={handleShare}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-100 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
                   >
                     <Share2 className="w-4 h-4" />
                     Share

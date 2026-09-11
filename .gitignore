@@ -1,5 +1,33 @@
-node_modules/
-.next/
+```
+# Build artifacts
 dist/
 build/
+assets/
+
+# Dependencies
+node_modules/
+
+# Android build files
+.gradle/
+*.jar
+
+# Temporary files
+*.tmp
+*.swp
+
+# Logs
 *.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```

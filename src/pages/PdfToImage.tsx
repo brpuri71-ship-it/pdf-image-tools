@@ -4,22 +4,9 @@ import { Upload, FileText, Download, Loader2, ImageIcon, Share2 } from 'lucide-r
 import * as pdfjsLib from 'pdfjs-dist';
 import { saveToPhone, shareFile } from '../utils/fileSaver';
 
-// Configure PDF.js worker - this works both in web and Capacitor Android
-// The worker file is bundled with pdfjs-dist in node_modules
-const setupPdfWorker = () => {
-  // Try multiple approaches to set the worker
-  try {
-    // First, try the standard approach for bundled environments
-    if (typeof window !== 'undefined') {
-      // Use the CDN as fallback for Capacitor WebView
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-  } catch (e) {
-    console.warn('PDF worker configuration warning:', e);
-  }
-};
-
-setupPdfWorker();
+// Set up PDF.js worker - use public path that works in production Capacitor builds
+const workerPath = '/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
 
 export default function PdfToImage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
