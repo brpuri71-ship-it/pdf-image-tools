@@ -18,6 +18,7 @@ export default function ImageResizer() {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setFileName(file.name);
+      setResizedBlob(null);
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataUrl = ev.target?.result as string;
@@ -27,6 +28,9 @@ export default function ImageResizer() {
           setOriginalSize({ width: img.width, height: img.height });
           setNewSize({ width: img.width, height: img.height });
           setAspectRatio(img.width / img.height);
+        };
+        img.onerror = () => {
+          alert('Failed to load image');
         };
         img.src = dataUrl;
       };
@@ -58,21 +62,27 @@ export default function ImageResizer() {
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new window.Image();
         img.onload = () => resolve(img);
-        img.onerror = reject;
+        img.onerror = () => reject(new Error('Failed to load image'));
         img.src = image;
       });
 
       const canvas = document.createElement('canvas');
       canvas.width = newSize.width;
       canvas.height = newSize.height;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
       ctx.drawImage(img, 0, 0, newSize.width, newSize.height);
 
       const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setResizedImage(resizedDataUrl);
     } catch (err) {
       console.error('Error resizing:', err);
-      alert('Error resizing image');
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      alert(`Error resizing image:\n${errorMsg}`);
     }
 
     setProcessing(false);
@@ -98,6 +108,7 @@ export default function ImageResizer() {
     setImage(null);
     setFileName('');
     setNewSize({ width: 0, height: 0 });
+    setResizedBlob(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -105,7 +116,7 @@ export default function ImageResizer() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto"
+      className="max-w-2xl mx-auto pb-8"
     >
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-slate-800 mb-2">Image Resizer</h1>
@@ -116,10 +127,20 @@ export default function ImageResizer() {
         {!image ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files[0];
+              if (file && file.type.startsWith('image/')) {
+                const event = { target: { files: [file] } } as any;
+                handleFileChange(event);
+              }
+            }}
+            className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all"
           >
             <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <p className="text-slate-600 font-medium">Click to pick an image</p>
+            <p className="text-sm text-slate-400 mt-1">or drag and drop</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -144,6 +165,23 @@ export default function ImageResizer() {
               </button>
             </div>
 
+            <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Original Size</label>
+                  <div className="text-sm text-slate-600">
+                    {originalSize.width} × {originalSize.height} px
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">New Size</label>
+                  <div className="text-sm text-slate-600">
+                    {newSize.width} × {newSize.height} px
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Width (px)</label>
@@ -151,7 +189,7 @@ export default function ImageResizer() {
                   type="number"
                   value={newSize.width}
                   onChange={(e) => handleWidthChange(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 />
               </div>
               <div className="space-y-2">
@@ -160,7 +198,7 @@ export default function ImageResizer() {
                   type="number"
                   value={newSize.height}
                   onChange={(e) => handleHeightChange(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 />
               </div>
             </div>
@@ -171,7 +209,7 @@ export default function ImageResizer() {
                 id="aspectRatio"
                 checked={maintainAspectRatio}
                 onChange={(e) => setMaintainAspectRatio(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 text-indigo-600 rounded"
               />
               <label htmlFor="aspectRatio" className="text-sm text-slate-600">
                 Maintain Aspect Ratio
